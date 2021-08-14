@@ -5,8 +5,9 @@ import 'package:todoapp_live/task.dart';
 
 class AddTaskScreen extends StatefulWidget {
   final Function? updateTaskList;
+  final Task? task;
 
-  const AddTaskScreen({this.updateTaskList});
+  const AddTaskScreen({this.updateTaskList, this.task});
 
   @override
   _AddTaskScreenState createState() => _AddTaskScreenState();
@@ -42,12 +43,41 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
       Task task = Task(title: _title, date: _date, priority: _priority);
 
-      // insert database
-      DatabaseHelper.instance.insertTask(task);
+      if (widget.task == null) {
+        // insert database
+        task.status = 0;
+        DatabaseHelper.instance.insertTask(task);
+      } else {
+        // update database logic
+        task.id = widget.task!.id;
+        task.status = widget.task!.status;
+        task.title = _title;
+        task.date = _date;
+        task.priority = _priority;
+        DatabaseHelper.instance.updateTask(task);
+      }
 
       if (widget.updateTaskList != null) widget.updateTaskList!();
       Navigator.pop(context);
     }
+  }
+
+  _delete() {
+    DatabaseHelper.instance.deleteTask(widget.task!.id);
+    widget.updateTaskList!();
+    Navigator.pop(context);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.task != null) {
+      _title = widget.task!.title;
+      _date = widget.task!.date;
+      _priority = widget.task!.priority;
+    }
+
+    _dateController.text = _dateFormat.format(_date);
   }
 
   @override
@@ -59,6 +89,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           child: Container(
             child: Column(
               children: [
+                Text(
+                  widget.task == null ? 'Create task' : 'Update task',
+                  style: TextStyle(
+                    fontSize: 24.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 Form(
                   key: _formKey,
                   child: Column(
@@ -69,6 +106,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         validator: (input) => input!.trim().isEmpty
                             ? 'Please, enter task title'
                             : null,
+                        initialValue: _title,
                       ),
                       TextFormField(
                         readOnly: true,
@@ -103,6 +141,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   ),
                 ),
                 TextButton(onPressed: _submit, child: Text('Save')),
+                TextButton(onPressed: _delete, child: Text('Delete')),
               ],
             ),
           ),

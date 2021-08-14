@@ -28,7 +28,7 @@ class DatabaseHelper {
     Directory dir = await getApplicationDocumentsDirectory();
     String path = dir.path + 'todo_list.db';
     final todoListDb =
-    await openDatabase(path, version: 1, onCreate: _createDb);
+        await openDatabase(path, version: 1, onCreate: _createDb);
     return todoListDb;
   }
 
@@ -64,8 +64,18 @@ class DatabaseHelper {
 
   Future<int?> updateTask(Task task) async {
     Database? db = await this.db;
-    final int? result = await db?.update(
-        taskTable, task.toMap(), where: '$colId = ?',whereArgs: [task.id]);
+    final int? result = await db?.update(taskTable, task.toMap(),
+        where: '$colId = ?', whereArgs: [task.id]);
+    return result;
+  }
+
+  Future<int?> deleteTask(int? id) async {
+    Database? db = await this.db;
+    final int? result = await db?.delete(
+      taskTable,
+      where: '$colId = ?',
+      whereArgs: [id],
+    );
     return result;
   }
 }

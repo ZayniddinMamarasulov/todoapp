@@ -17,8 +17,14 @@ class _TaskListSreenState extends State<TaskListScreen> {
 
   Widget _buildItem(Task task) {
     return Container(
-      color: Colors.amber,
       child: ListTile(
+        onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => AddTaskScreen(
+                      updateTaskList: _updateTaskList,
+                      task: task,
+                    ))),
         title: Text(task.title!,
             style: TextStyle(
                 decoration: task.status == 0
@@ -72,12 +78,26 @@ class _TaskListSreenState extends State<TaskListScreen> {
               return ListView.builder(
                   itemCount: snapshot.data.length + 1,
                   itemBuilder: (BuildContext context, int index) {
+                    final int completedTaskCount = snapshot.data
+                        .where((Task task) => task.status == 1)
+                        .toList()
+                        .length;
                     if (index == 0) {
                       return Container(
-                        child: Text(
-                          'My tasks',
-                          style: TextStyle(
-                              fontSize: 40.0, fontWeight: FontWeight.bold),
+                        child: Row(
+                          children: [
+                            Text(
+                              'My tasks',
+                              style: TextStyle(
+                                  fontSize: 40.0, fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(width: 10.0),
+                            Text(
+                              '$completedTaskCount / ${snapshot.data.length}',
+                              style: TextStyle(
+                                  fontSize: 28.0, fontWeight: FontWeight.bold),
+                            ),
+                          ],
                         ),
                       );
                     } else
