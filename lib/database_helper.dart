@@ -41,14 +41,28 @@ class DatabaseHelper {
         '$colStatus INTEGER)');
   }
 
-  Future<List<Map<String, dynamic>>?> getTaskMapList() async {
+  Future<List<Map<String, dynamic>>?> getTaskMapList(
+      bool orderByDate, bool filterByStatus) async {
     Database? db = await this.db;
-    final List<Map<String, Object?>>? result = await db?.query(taskTable);
+    dynamic query = await db?.query(taskTable);
+
+    if (orderByDate && filterByStatus)
+      query = await db?.query(taskTable,
+          orderBy: '$colDate ASC', where: '$colStatus = 1');
+    else if (orderByDate)
+      query = await db?.query(taskTable, orderBy: '$colDate ASC');
+    else if (filterByStatus)
+      query = await db?.query(taskTable, where: '$colStatus = 1');
+    else
+      query = await db?.query(taskTable);
+
+    final List<Map<String, Object?>>? result = query;
     return result;
   }
 
-  Future<List<Task>> getTaskList() async {
-    final List<Map<String, dynamic>>? taskMapList = await getTaskMapList();
+  Future<List<Task>> getTaskList(bool orderByDate, bool filterByStatus) async {
+    final List<Map<String, dynamic>>? taskMapList =
+        await getTaskMapList(orderByDate, filterByStatus);
     final List<Task> taskList = [];
     taskMapList?.forEach((taskMap) {
       taskList.add(Task.fromMap(taskMap));

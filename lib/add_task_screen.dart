@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:todoapp_live/database_helper.dart';
+import 'package:todoapp_live/notifications.dart';
 import 'package:todoapp_live/task.dart';
 
 class AddTaskScreen extends StatefulWidget {
@@ -17,9 +18,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   final _formKey = GlobalKey<FormState>();
   String? _title = '';
   String? _priority;
+  String? _hour, _minute, _time;
   DateTime _date = DateTime.now();
+  DateTime _dateWithTime = DateTime.now();
+  TimeOfDay _selectedTime = TimeOfDay(hour: 00, minute: 00);
   TextEditingController _dateController = TextEditingController();
+  TextEditingController _timeController = TextEditingController();
   final DateFormat _dateFormat = DateFormat('MMM dd, yyyy');
+  final DateFormat _timeFormat = DateFormat('hh:mm');
   final List<String> _priorities = ['Low', 'Medium', 'High'];
 
   _handleDatePicker() async {
@@ -37,11 +43,30 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     }
   }
 
+  _handleTimePicker() async {
+    final timePicked =
+        await showTimePicker(context: context, initialTime: _selectedTime);
+
+    if (timePicked != null) {
+      setState(() {
+        _selectedTime = timePicked;
+        _hour = _selectedTime.hour.toString();
+        _minute = _selectedTime.minute.toString();
+        _time = _hour! + " : " + _minute!;
+        _dateWithTime = DateTime(_date.year, _date.month, _date.day,
+            _selectedTime.hour, _selectedTime.minute);
+        _timeController.text = _timeFormat.format(_dateWithTime);
+      });
+    }
+  }
+
   _submit() {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      Task task = Task(title: _title, date: _date, priority: _priority);
+      Task task = Task(title: _title, date: _dateWithTime, priority: _priority);
+
+      createReminderNotification(task);
 
       if (widget.task == null) {
         // insert database
@@ -52,7 +77,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         task.id = widget.task!.id;
         task.status = widget.task!.status;
         task.title = _title;
-        task.date = _date;
+        task.date = _dateWithTime;
         task.priority = _priority;
         DatabaseHelper.instance.updateTask(task);
       }
@@ -75,9 +100,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       _title = widget.task!.title;
       _date = widget.task!.date;
       _priority = widget.task!.priority;
+      _dateWithTime = widget.task!.date;
     }
 
     _dateController.text = _dateFormat.format(_date);
+    _timeController.text = _timeFormat.format(_dateWithTime);
   }
 
   @override
@@ -114,6 +141,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         onTap: _handleDatePicker,
                         decoration: InputDecoration(
                             labelText: 'Date',
+                            labelStyle: TextStyle(color: Colors.black)),
+                      ),
+                      TextFormField(
+                        readOnly: true,
+                        controller: _timeController,
+                        onTap: _handleTimePicker,
+                        decoration: InputDecoration(
+                            labelText: 'Time',
                             labelStyle: TextStyle(color: Colors.black)),
                       ),
                       DropdownButtonFormField(
